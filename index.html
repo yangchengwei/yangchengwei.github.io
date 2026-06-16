@@ -3,33 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>影片自動播放</title>
+    <title>西式婚禮喜帖</title>
     <style>
-        /* 讓影片全螢幕居中對齊，並呈現黑色背景 */
         body {
             margin: 0;
             padding: 0;
-            background-color: #000;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            background: radial-gradient(circle at center, #FDFBF7 0%, #E8DFD5 100%);
             overflow: hidden;
         }
-        video {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain; /* 保持影片比例縮放 */
+
+        .envelope-wrapper {
+            position: relative;
+            width: 360px;
+            height: 240px;
+            animation: flyIn 1.8s cubic-bezier(0.25, 1, 0.4, 1) forwards;
+            cursor: pointer;
+        }
+
+        .envelope-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #E8DACB;
+            border-radius: 6px;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.05), 0 15px 35px rgba(180, 160, 140, 0.4);
+            z-index: 1;
+        }
+
+        .letter {
+            position: absolute;
+            width: 280px;
+            height: 395px; 
+            left: 40px; 
+            bottom: 15px; 
+            background-color: #000;
+            border-radius: 6px;
+            object-fit: cover;
+            clip-path: inset(175px 0 0 0); 
+            z-index: 3; 
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.4s, 
+                        clip-path 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.4s,
+                        box-shadow 0.8s ease 0.4s;
+        }
+
+        .front-pocket {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 4;
+            filter: drop-shadow(0 -3px 8px rgba(180, 160, 140, 0.3));
+            pointer-events: none;
+        }
+
+        .front-shape {
+            width: 100%;
+            height: 100%;
+            background: #FCFAF8;
+            clip-path: path('M 0,240 L 360,240 L 360,0 Q 180,140 0,0 Z');
+        }
+
+        .top-flap-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 360px;
+            /* 稍微增加容器高度以容納更長的蓋子 */
+            height: 170px;
+            z-index: 5;
+            transform-origin: top;
+            filter: drop-shadow(0 4px 10px rgba(180, 160, 140, 0.35));
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
+                        z-index 0s 0.3s;
+        }
+
+        .flap-shape {
+            width: 100%;
+            height: 100%;
+            background: #FCFAF8;
+            /* 【修改重點 1】將尖端向下延伸至 145px (約為 240px 的 3/5 高度)，同時維持原本的圓弧形狀 */
+            clip-path: path('M 0,0 L 360,0 L 220,105 Q 180,145 140,105 Z');
+        }
+
+        .wax-seal {
+            position: absolute;
+            width: 46px;
+            height: 46px;
+            background-color: #8B2632;
+            border-radius: 50%;
+            left: 157px;
+            /* 配合加長的蓋子，將蠟封的位置往下移動對齊 */
+            top: 100px;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.4), 0 2px 5px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #E2C792;
+            font-size: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        .envelope-wrapper.open .top-flap-container {
+            transform: rotateX(180deg);
+            z-index: 2; 
+        }
+
+        .envelope-wrapper.open .letter {
+            transform: translateY(-220px);
+            clip-path: inset(0 0 0 0); 
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+
+        @keyframes flyIn {
+            0% { transform: translateY(-100vh) rotate(-10deg) scale(0.8); opacity: 0; }
+            100% { transform: translateY(10vh) rotate(0deg) scale(1); opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: inset 0 0 8px rgba(0,0,0,0.4), 0 0 0 0 rgba(139, 38, 50, 0.4); }
+            70% { box-shadow: inset 0 0 8px rgba(0,0,0,0.4), 0 0 0 15px rgba(139, 38, 50, 0); }
+            100% { box-shadow: inset 0 0 8px rgba(0,0,0,0.4), 0 0 0 0 rgba(139, 38, 50, 0); }
         }
     </style>
 </head>
 <body>
 
-    <video autoplay muted loop controls playsinline>
-        <source src="video.mov" type="video/quicktime">
-        <source src="video.mov" type="video/mp4">
-        您的瀏覽器不支援此影片格式。
-    </video>
+    <div class="envelope-wrapper" id="myEnvelope">
+        <div class="envelope-back"></div>
+        
+        <video class="letter" id="myVideo" playsinline>
+            <source src="video.mov">
+        </video>
+
+        <div class="front-pocket">
+            <div class="front-shape"></div>
+        </div>
+
+        <div class="top-flap-container">
+            <div class="flap-shape"></div>
+            <div class="wax-seal">❤</div>
+        </div>
+    </div>
+
+    <script>
+        const envelope = document.getElementById('myEnvelope');
+        const myVideo = document.getElementById('myVideo');
+
+        envelope.addEventListener('click', function() {
+            if (!envelope.classList.contains('open')) {
+                envelope.classList.add('open');
+                
+                myVideo.play().catch(error => {
+                    console.log('播放失敗：', error);
+                });
+            }
+        });
+    </script>
 
 </body>
 </html>
