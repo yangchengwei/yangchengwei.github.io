@@ -47,9 +47,7 @@
             object-fit: cover;
             clip-path: inset(175px 0 0 0); 
             z-index: 3; 
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.4s, 
-                        clip-path 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.4s,
-                        box-shadow 0.8s ease 0.4s;
+            /* 移除了原本的 transition，改用 keyframes 來控制兩階段動作 */
         }
 
         .front-pocket {
@@ -75,7 +73,6 @@
             top: 0;
             left: 0;
             width: 360px;
-            /* 稍微增加容器高度以容納更長的蓋子 */
             height: 170px;
             z-index: 5;
             transform-origin: top;
@@ -88,7 +85,6 @@
             width: 100%;
             height: 100%;
             background: #FCFAF8;
-            /* 【修改重點 1】將尖端向下延伸至 145px (約為 240px 的 3/5 高度)，同時維持原本的圓弧形狀 */
             clip-path: path('M 0,0 L 360,0 L 220,105 Q 180,145 140,105 Z');
         }
 
@@ -99,7 +95,6 @@
             background-color: #8B2632;
             border-radius: 50%;
             left: 157px;
-            /* 配合加長的蓋子，將蠟封的位置往下移動對齊 */
             top: 100px;
             box-shadow: inset 0 0 8px rgba(0,0,0,0.4), 0 2px 5px rgba(0,0,0,0.2);
             display: flex;
@@ -115,10 +110,9 @@
             z-index: 2; 
         }
 
+        /* 觸發兩段式的抽出並置中動畫 */
         .envelope-wrapper.open .letter {
-            transform: translateY(-220px);
-            clip-path: inset(0 0 0 0); 
-            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            animation: pullAndCenter 2s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards;
         }
 
         @keyframes flyIn {
@@ -130,6 +124,36 @@
             0% { box-shadow: inset 0 0 8px rgba(0,0,0,0.4), 0 0 0 0 rgba(139, 38, 50, 0.4); }
             70% { box-shadow: inset 0 0 8px rgba(0,0,0,0.4), 0 0 0 15px rgba(139, 38, 50, 0); }
             100% { box-shadow: inset 0 0 8px rgba(0,0,0,0.4), 0 0 0 0 rgba(139, 38, 50, 0); }
+        }
+
+        /* 抽出信件並移動到畫面正中間的核心邏輯 */
+        @keyframes pullAndCenter {
+            0% {
+                transform: translateY(0);
+                clip-path: inset(175px 0 0 0);
+                z-index: 3;
+            }
+            49% {
+                /* 動作一：向上完整抽出，確保底部離開信封口袋 */
+                transform: translateY(-230px);
+                clip-path: inset(0 0 0 0);
+                z-index: 3;
+            }
+            50% {
+                /* 動作一結束瞬間：將影片移到最上層，準備蓋在信封上方 */
+                transform: translateY(-230px);
+                clip-path: inset(0 0 0 0);
+                z-index: 6;
+            }
+            100% {
+                /* 動作二：往下移動到畫面絕對正中間
+                   (92.5px 是信件與信封的高度中心差，-10vh 負責抵銷信封進場時留下的偏移) 
+                */
+                transform: translateY(calc(92.5px - 10vh));
+                clip-path: inset(0 0 0 0);
+                z-index: 6;
+                box-shadow: 0 20px 45px rgba(0,0,0,0.4);
+            }
         }
     </style>
 </head>
