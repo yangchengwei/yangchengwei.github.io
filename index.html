@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的互動式網頁</title>
+    <style>
+        body {
+            font-family: "微軟正黑體", sans-serif;
+            text-align: center;
+            padding-top: 100px;
+            transition: background-color 0.5s ease; /* 讓顏色切換有漸變效果 */
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: #333;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>歡迎來到我的 GitHub Pages! 🚀</h1>
+    <p id="message">點擊下方按鈕，看看會發生什麼事。</p>
+    
+    <button onclick="triggerInteraction()">點擊我</button>
+
+    <script>
+        // 這是負責互動邏輯的 JavaScript
+        function triggerInteraction() {
+            // 定義一組顏色陣列
+            const colors = ['#FFDDC1', '#FFABAB', '#FFC3A0', '#D5AAFF', '#85E3FF', '#B9FFB0'];
+            // 隨機挑選一個顏色
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            // 改變背景顏色
+            document.body.style.backgroundColor = randomColor;
+            // 改變畫面上的文字
+            document.getElementById('message').innerText = '太棒了！背景顏色已經改變！✨';
+        }
+    </script>
+</body>
+</html>
