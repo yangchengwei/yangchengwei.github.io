@@ -10,23 +10,43 @@
     <title>承尉🥂靜宜</title>
 
     <style>
+        :root {
+            --scale: 1; 
+        }
+
         body {
             margin: 0;
             padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh; 
             background: radial-gradient(circle at center, #FDFBF7 0%, #E8DFD5 100%);
-            overflow: hidden;
+            user-select: none; 
+            -webkit-user-select: none;
+        }
+
+        .scene {
+            position: relative;
+            transform: scale(var(--scale));
+            transform-origin: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .envelope-wrapper {
             position: relative;
+            top: 0; 
             width: 360px;
             height: 240px;
             animation: flyIn 1.8s cubic-bezier(0.25, 1, 0.4, 1) forwards;
             cursor: pointer;
+            transition: top 2s cubic-bezier(0.4, 0, 0.2, 1) 0.4s;
+        }
+
+        .envelope-wrapper.open {
+            top: 150px; 
         }
 
         .envelope-back {
@@ -43,16 +63,44 @@
 
         .letter {
             position: absolute;
-            width: 280px;
-            height: 395px; 
-            left: 40px; 
-            bottom: 15px; 
-            background-color: #000;
+            width: 310px;    
+            height: 430px;   
+            left: 25px;      
+            top: 15px; 
+            background-color: transparent;
             border-radius: 6px;
-            object-fit: cover;
-            clip-path: inset(175px 0 0 0); 
+            clip-path: inset(0 0 210px 0); 
             z-index: 3; 
-            /* 移除了原本的 transition，改用 keyframes 來控制兩階段動作 */
+            perspective: 1200px; 
+        }
+
+        .letter.no-clip {
+            clip-path: none !important;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            border-radius: 6px;
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden; 
+            -webkit-backface-visibility: hidden;
+            object-fit: cover;
+            border-radius: 6px;
+            background-color: #FCFAF8;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            pointer-events: none; 
+        }
+
+        .card-back {
+            transform: rotateY(180deg); 
         }
 
         .front-pocket {
@@ -82,8 +130,7 @@
             z-index: 5;
             transform-origin: top;
             filter: drop-shadow(0 4px 10px rgba(180, 160, 140, 0.35));
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
-                        z-index 0s 0.3s;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), z-index 0s 0.3s;
         }
 
         .flap-shape {
@@ -110,19 +157,65 @@
             animation: pulse 2s infinite;
         }
 
+        /* --- 新增：音樂播放器視窗樣式 --- */
+        .music-player {
+            position: absolute;
+            bottom: 12px; /* 位於信封最下方 */
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(252, 250, 248, 0.9);
+            border: 1px solid #E8DACB;
+            padding: 6px 16px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(180, 160, 140, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-family: sans-serif;
+            color: #8B2632;
+            z-index: 5; /* 在前口袋之上，但被抽出的信件絕對壓不倒它 */
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease 1s, transform 0.2s ease, background 0.2s ease;
+            cursor: pointer;
+        }
+
+        .envelope-wrapper.open .music-player {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .music-player:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        .music-player.playing .icon {
+            animation: musicBounce 1s infinite alternate;
+        }
+
+        .music-player.paused {
+            color: #A09890;
+            border-color: #D8CEC3;
+        }
+
+        .music-player.paused .icon {
+            filter: grayscale(100%);
+        }
+
         .envelope-wrapper.open .top-flap-container {
             transform: rotateX(180deg);
             z-index: 2; 
         }
 
-        /* 觸發兩段式的抽出並置中動畫 */
         .envelope-wrapper.open .letter {
             animation: pullAndCenter 2s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards;
         }
 
         @keyframes flyIn {
-            0% { transform: translateY(-100vh) rotate(-10deg) scale(0.8); opacity: 0; }
-            100% { transform: translateY(10vh) rotate(0deg) scale(1); opacity: 1; }
+            0% { transform: translateY(-800px) rotate(-10deg) scale(0.8); opacity: 0; }
+            100% { transform: translateY(50px) rotate(0deg) scale(1); opacity: 1; }
         }
 
         @keyframes pulse {
@@ -131,69 +224,212 @@
             100% { box-shadow: inset 0 0 8px rgba(0,0,0,0.4), 0 0 0 0 rgba(139, 38, 50, 0); }
         }
 
-        /* 抽出信件並移動到畫面正中間的核心邏輯 */
         @keyframes pullAndCenter {
             0% {
                 transform: translateY(0);
-                clip-path: inset(175px 0 0 0);
+                clip-path: inset(0 0 210px 0); 
                 z-index: 3;
             }
             49% {
-                /* 動作一：向上完整抽出，確保底部離開信封口袋 */
-                transform: translateY(-230px);
-                clip-path: inset(0 0 0 0);
+                transform: translateY(-460px); 
+                clip-path: inset(0 0 0 0); 
                 z-index: 3;
             }
             50% {
-                /* 動作一結束瞬間：將影片移到最上層，準備蓋在信封上方 */
-                transform: translateY(-230px);
+                transform: translateY(-460px);
                 clip-path: inset(0 0 0 0);
                 z-index: 6;
             }
             100% {
-                /* 動作二：往下移動到畫面絕對正中間
-                   (92.5px 是信件與信封的高度中心差，-10vh 負責抵銷信封進場時留下的偏移) 
-                */
-                transform: translateY(calc(92.5px - 10vh));
+                transform: translateY(-310px); 
                 clip-path: inset(0 0 0 0);
                 z-index: 6;
-                box-shadow: 0 20px 45px rgba(0,0,0,0.4);
             }
+        }
+
+        /* 新增：音符跳動動畫 */
+        @keyframes musicBounce {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-2px) scale(1.1); }
         }
     </style>
 </head>
 <body>
 
-    <div class="envelope-wrapper" id="myEnvelope">
-        <div class="envelope-back"></div>
-        
-        <video class="letter" id="myVideo" playsinline>
-            <source src="video.mov">
-        </video>
+    <audio id="bgMusic" src="music.mp3" loop preload="auto"></audio>
 
-        <div class="front-pocket">
-            <div class="front-shape"></div>
-        </div>
+    <div class="scene">
+        <div class="envelope-wrapper" id="myEnvelope">
+            <div class="envelope-back"></div>
+            
+            <div class="letter" id="myLetter">
+                <div class="card-inner" id="cardInner">
+                    <img class="card-face card-front" id="imgFront" src="info0.jpg" alt="Info 0">
+                    <img class="card-face card-back" id="imgBack" src="info1.jpg" alt="Info 1">
+                </div>
+            </div>
 
-        <div class="top-flap-container">
-            <div class="flap-shape"></div>
-            <div class="wax-seal">❤</div>
+            <div class="front-pocket">
+                <div class="front-shape"></div>
+            </div>
+
+            <div class="music-player paused" id="musicPlayer">
+                <span class="icon">🎵</span>
+                <span class="text">Music</span>
+            </div>
+
+            <div class="top-flap-container">
+                <div class="flap-shape"></div>
+                <div class="wax-seal">❤</div>
+            </div>
         </div>
     </div>
 
     <script>
         const envelope = document.getElementById('myEnvelope');
-        const myVideo = document.getElementById('myVideo');
+        const myLetter = document.getElementById('myLetter');
+        const cardInner = document.getElementById('cardInner');
+        const imgFront = document.getElementById('imgFront');
+        const imgBack = document.getElementById('imgBack');
+        
+        // 新增：抓取音樂控制節點
+        const bgMusic = document.getElementById('bgMusic');
+        const musicPlayer = document.getElementById('musicPlayer');
+        const musicText = musicPlayer.querySelector('.text');
+
+        const images = ['info0.jpg', 'info1.jpg', 'info2.jpg', 'info3.jpg'];
+        
+        let currentTotalRotation = 0; 
+        let startRotation = 0;
+        let isExtracted = false;    
+        let isDragging = false;     
+        let isAnimating = false;    
+        let startX = 0;             
+        let currentScale = 1; 
+
+        function adjustScale() {
+            let targetScale = Math.min(window.innerWidth / 400, window.innerHeight / 650);
+            targetScale = Math.min(targetScale, 1.5); 
+            currentScale = targetScale;
+            document.documentElement.style.setProperty('--scale', currentScale);
+        }
+
+        adjustScale();
+
+        function getIndexForTurn(turn) {
+            let index = -turn % images.length;
+            if (index < 0) index += images.length; 
+            return index;
+        }
 
         envelope.addEventListener('click', function() {
             if (!envelope.classList.contains('open')) {
                 envelope.classList.add('open');
                 
-                myVideo.play().catch(error => {
-                    console.log('播放失敗：', error);
+                // 新增：點擊信封展開時，自動播放音樂
+                bgMusic.play().then(() => {
+                    musicPlayer.classList.remove('paused');
+                    musicPlayer.classList.add('playing');
+                    musicText.innerText = 'Playing';
+                }).catch(error => {
+                    console.log('音樂自動播放被阻擋：', error);
                 });
+                
+                setTimeout(() => {
+                    isExtracted = true;
+                    myLetter.classList.add('no-clip'); 
+                    myLetter.style.cursor = 'grab';    
+                }, 2400);
             }
         });
+
+        // 新增：點擊音樂播放器切換播放/暫停
+        musicPlayer.addEventListener('click', function(e) {
+            e.stopPropagation(); // 防止點擊事件穿透觸發信封的展開
+            if (bgMusic.paused) {
+                bgMusic.play();
+                musicPlayer.classList.remove('paused');
+                musicPlayer.classList.add('playing');
+                musicText.innerText = 'Playing';
+            } else {
+                bgMusic.pause();
+                musicPlayer.classList.remove('playing');
+                musicPlayer.classList.add('paused');
+                musicText.innerText = 'Paused';
+            }
+        });
+        
+        // 為了在手機上防止點擊音樂器時意外拖曳
+        musicPlayer.addEventListener('touchstart', function(e) {
+            e.stopPropagation();
+        }, { passive: true });
+
+        function startDrag(e) {
+            if (!isExtracted || isAnimating) return;
+            if (e.touches && e.touches.length > 1) return;
+            
+            isDragging = true;
+            cardInner.style.transition = 'none'; 
+            myLetter.style.cursor = 'grabbing';
+            
+            startX = e.touches ? e.touches[0].clientX : e.clientX;
+            startRotation = currentTotalRotation; 
+        }
+
+        function docDrag(e) {
+            if (!isDragging) return;
+            if (e.touches && e.touches.length > 1) {
+                endDrag();
+                return;
+            }
+            
+            if (e.cancelable) e.preventDefault();
+            
+            const currentX = e.touches ? e.touches[0].clientX : e.clientX;
+            const deltaX = (currentX - startX) / currentScale; 
+            
+            currentTotalRotation = startRotation + (deltaX / 450) * 180;
+            cardInner.style.transform = `rotateY(${currentTotalRotation}deg)`;
+
+            let lowerTurn = Math.floor(currentTotalRotation / 180);
+            let upperTurn = lowerTurn + 1;
+
+            let evenTurn = (lowerTurn % 2 === 0) ? lowerTurn : upperTurn;
+            let oddTurn = (lowerTurn % 2 !== 0) ? lowerTurn : upperTurn;
+
+            imgFront.src = images[getIndexForTurn(evenTurn)];
+            imgBack.src = images[getIndexForTurn(oddTurn)];
+        }
+
+        function endDrag() {
+            if (!isDragging) return;
+            isDragging = false;
+            isAnimating = true; 
+            myLetter.style.cursor = 'grab';
+
+            cardInner.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
+
+            currentTotalRotation = Math.round(currentTotalRotation / 180) * 180;
+            cardInner.style.transform = `rotateY(${currentTotalRotation}deg)`;
+
+            setTimeout(() => {
+                isAnimating = false;
+                let lowerTurn = Math.floor(currentTotalRotation / 180);
+                let upperTurn = lowerTurn + 1;
+                let evenTurn = (lowerTurn % 2 === 0) ? lowerTurn : upperTurn;
+                let oddTurn = (lowerTurn % 2 !== 0) ? lowerTurn : upperTurn;
+                imgFront.src = images[getIndexForTurn(evenTurn)];
+                imgBack.src = images[getIndexForTurn(oddTurn)];
+            }, 500);
+        }
+
+        myLetter.addEventListener('mousedown', startDrag);
+        window.addEventListener('mousemove', docDrag);
+        window.addEventListener('mouseup', endDrag);
+
+        myLetter.addEventListener('touchstart', startDrag, { passive: true });
+        window.addEventListener('touchmove', docDrag, { passive: false });
+        window.addEventListener('touchend', endDrag);
     </script>
 
 </body>
