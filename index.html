@@ -157,10 +157,9 @@
             animation: pulse 2s infinite;
         }
 
-        /* --- 新增：音樂播放器視窗樣式 --- */
         .music-player {
             position: absolute;
-            bottom: 12px; /* 位於信封最下方 */
+            bottom: 12px; 
             left: 50%;
             transform: translateX(-50%);
             background: rgba(252, 250, 248, 0.9);
@@ -174,7 +173,7 @@
             font-size: 13px;
             font-family: sans-serif;
             color: #8B2632;
-            z-index: 5; /* 在前口袋之上，但被抽出的信件絕對壓不倒它 */
+            z-index: 5; 
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.6s ease 1s, transform 0.2s ease, background 0.2s ease;
@@ -204,6 +203,36 @@
             filter: grayscale(100%);
         }
 
+        .hint-click {
+            position: absolute;
+            left: 160px; 
+            top: 130px;
+            font-size: 40px; 
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .hint-swipe {
+            position: absolute;
+            top: 80%;
+            left: 60px;
+            font-size: 40px;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .hint-click.active {
+            animation: clickHintAnim 3s infinite;
+        }
+
+        .hint-swipe.active {
+            animation: swipeHintAnim 3s infinite;
+        }
+
         .envelope-wrapper.open .top-flap-container {
             transform: rotateX(180deg);
             z-index: 2; 
@@ -225,32 +254,30 @@
         }
 
         @keyframes pullAndCenter {
-            0% {
-                transform: translateY(0);
-                clip-path: inset(0 0 210px 0); 
-                z-index: 3;
-            }
-            49% {
-                transform: translateY(-460px); 
-                clip-path: inset(0 0 0 0); 
-                z-index: 3;
-            }
-            50% {
-                transform: translateY(-460px);
-                clip-path: inset(0 0 0 0);
-                z-index: 6;
-            }
-            100% {
-                transform: translateY(-310px); 
-                clip-path: inset(0 0 0 0);
-                z-index: 6;
-            }
+            0% { transform: translateY(0); clip-path: inset(0 0 210px 0); z-index: 3; }
+            49% { transform: translateY(-460px); clip-path: inset(0 0 0 0); z-index: 3; }
+            50% { transform: translateY(-460px); clip-path: inset(0 0 0 0); z-index: 6; }
+            100% { transform: translateY(-310px); clip-path: inset(0 0 0 0); z-index: 6; }
         }
 
-        /* 新增：音符跳動動畫 */
         @keyframes musicBounce {
             0% { transform: translateY(0) scale(1); }
             100% { transform: translateY(-2px) scale(1.1); }
+        }
+
+        @keyframes clickHintAnim {
+            0%, 100% { opacity: 0; transform: translateY(20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            20% { opacity: 1; transform: translateY(0) scale(0.8); }
+            30% { opacity: 1; transform: translateY(0) scale(1); }
+            40% { opacity: 0; transform: translateY(10px); }
+        }
+
+        @keyframes swipeHintAnim {
+            0%, 100% { opacity: 0; transform: translate(0, -50%); }
+            10% { opacity: 1; transform: translate(0, -50%); }
+            30% { opacity: 1; transform: translate(150px, -50%); } 
+            40% { opacity: 0; transform: translate(160px, -50%); } 
         }
     </style>
 </head>
@@ -267,6 +294,7 @@
                     <img class="card-face card-front" id="imgFront" src="info0.jpg" alt="Info 0">
                     <img class="card-face card-back" id="imgBack" src="info1.jpg" alt="Info 1">
                 </div>
+                <div class="hint-swipe" id="hintSwipe">👆</div>
             </div>
 
             <div class="front-pocket">
@@ -282,6 +310,8 @@
                 <div class="flap-shape"></div>
                 <div class="wax-seal">❤</div>
             </div>
+            
+            <div class="hint-click" id="hintClick">👆</div>
         </div>
     </div>
 
@@ -292,10 +322,12 @@
         const imgFront = document.getElementById('imgFront');
         const imgBack = document.getElementById('imgBack');
         
-        // 新增：抓取音樂控制節點
         const bgMusic = document.getElementById('bgMusic');
         const musicPlayer = document.getElementById('musicPlayer');
         const musicText = musicPlayer.querySelector('.text');
+
+        const hintClick = document.getElementById('hintClick');
+        const hintSwipe = document.getElementById('hintSwipe');
 
         const images = ['info0.jpg', 'info1.jpg', 'info2.jpg', 'info3.jpg'];
         
@@ -306,6 +338,14 @@
         let isAnimating = false;    
         let startX = 0;             
         let currentScale = 1; 
+        
+        // 🌟 更新：用 Set 集合來記錄「已經從哪些頁面滑動過」
+        let swipedFromIndices = new Set();
+        let swipeHintTimer;
+
+        let clickHintTimer = setTimeout(() => {
+            hintClick.classList.add('active');
+        }, 3000);
 
         function adjustScale() {
             let targetScale = Math.min(window.innerWidth / 400, window.innerHeight / 650);
@@ -317,16 +357,37 @@
         adjustScale();
 
         function getIndexForTurn(turn) {
-            let index = -turn % images.length;
+            let index = turn % images.length;
             if (index < 0) index += images.length; 
             return index;
         }
 
+        // 🌟 新增：統一控管滑動提示的函數
+        function triggerSwipeHint() {
+            clearTimeout(swipeHintTimer);
+            hintSwipe.classList.remove('active');
+            
+            // 如果 4 頁都滑過了，就永遠不再顯示提示
+            if (swipedFromIndices.size >= images.length) return;
+
+            let currentTurn = Math.round(currentTotalRotation / 180);
+            let currentIndex = getIndexForTurn(currentTurn);
+
+            // 如果停留在「還沒有滑過」的頁面，倒數 3 秒後顯示提示
+            if (!swipedFromIndices.has(currentIndex)) {
+                swipeHintTimer = setTimeout(() => {
+                    hintSwipe.classList.add('active');
+                }, 3000);
+            }
+        }
+
         envelope.addEventListener('click', function() {
             if (!envelope.classList.contains('open')) {
+                clearTimeout(clickHintTimer);
+                hintClick.classList.remove('active');
+
                 envelope.classList.add('open');
                 
-                // 新增：點擊信封展開時，自動播放音樂
                 bgMusic.play().then(() => {
                     musicPlayer.classList.remove('paused');
                     musicPlayer.classList.add('playing');
@@ -339,13 +400,16 @@
                     isExtracted = true;
                     myLetter.classList.add('no-clip'); 
                     myLetter.style.cursor = 'grab';    
+                    
+                    // 🌟 啟動第一頁的提示倒數
+                    triggerSwipeHint();
+
                 }, 2400);
             }
         });
 
-        // 新增：點擊音樂播放器切換播放/暫停
         musicPlayer.addEventListener('click', function(e) {
-            e.stopPropagation(); // 防止點擊事件穿透觸發信封的展開
+            e.stopPropagation(); 
             if (bgMusic.paused) {
                 bgMusic.play();
                 musicPlayer.classList.remove('paused');
@@ -359,7 +423,6 @@
             }
         });
         
-        // 為了在手機上防止點擊音樂器時意外拖曳
         musicPlayer.addEventListener('touchstart', function(e) {
             e.stopPropagation();
         }, { passive: true });
@@ -368,6 +431,13 @@
             if (!isExtracted || isAnimating) return;
             if (e.touches && e.touches.length > 1) return;
             
+            // 🌟 紀錄使用者剛從哪一頁開始滑動，並立刻隱藏目前的提示
+            let currentTurn = Math.round(currentTotalRotation / 180);
+            swipedFromIndices.add(getIndexForTurn(currentTurn));
+            
+            clearTimeout(swipeHintTimer);
+            hintSwipe.classList.remove('active');
+
             isDragging = true;
             cardInner.style.transition = 'none'; 
             myLetter.style.cursor = 'grabbing';
@@ -388,7 +458,7 @@
             const currentX = e.touches ? e.touches[0].clientX : e.clientX;
             const deltaX = (currentX - startX) / currentScale; 
             
-            currentTotalRotation = startRotation + (deltaX / 450) * 180;
+            currentTotalRotation = startRotation + (deltaX / 300) * 180;
             cardInner.style.transform = `rotateY(${currentTotalRotation}deg)`;
 
             let lowerTurn = Math.floor(currentTotalRotation / 180);
@@ -420,6 +490,9 @@
                 let oddTurn = (lowerTurn % 2 !== 0) ? lowerTurn : upperTurn;
                 imgFront.src = images[getIndexForTurn(evenTurn)];
                 imgBack.src = images[getIndexForTurn(oddTurn)];
+                
+                // 🌟 動畫翻頁結束後，檢查新的一頁是否需要顯示提示
+                triggerSwipeHint();
             }, 500);
         }
 
