@@ -64,12 +64,12 @@
         .letter {
             position: absolute;
             width: 310px;    
-            height: 430px;   
+            height: 432px;   
             left: 25px;      
             top: 15px; 
             background-color: transparent;
             border-radius: 6px;
-            clip-path: inset(0 0 210px 0); 
+            clip-path: inset(0 0 212px 0); 
             z-index: 3; 
             perspective: 1200px; 
         }
@@ -99,8 +99,23 @@
             pointer-events: none; 
         }
 
-        .card-back {
-            transform: rotateY(180deg); 
+        /* 產生 3D 厚度 - 正反面推開 1.5px */
+        .card-face.card-front {
+            transform: translateZ(1.5px);
+        }
+
+        .card-face.card-back {
+            transform: rotateY(180deg) translateZ(1.5px); 
+        }
+
+        /* 改用「圖層疊加法」產生完美厚度，自然貼合圓角弧度 */
+        .card-layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: #D8CEC3; 
+            border-radius: 6px; /* 繼承信件的圓角 */
+            pointer-events: none;
         }
 
         .front-pocket {
@@ -114,11 +129,34 @@
             pointer-events: none;
         }
 
-        .front-shape {
+        .flap-left {
+            position: absolute;
             width: 100%;
             height: 100%;
-            background: #FCFAF8;
-            clip-path: path('M 0,240 L 360,240 L 360,0 Q 180,140 0,0 Z');
+            background-color: #FBF9F6; 
+            clip-path: polygon(0 0, 55% 55%, 0 100%);
+        }
+
+        .flap-right {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: #FBF9F6; 
+            clip-path: polygon(100% 0, 100% 100%, 45% 55%);
+        }
+
+        .flap-bottom-wrapper {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 -3px 8px rgba(180, 160, 140, 0.3));
+        }
+
+        .flap-bottom {
+            width: 100%;
+            height: 100%;
+            background-color: #FCFAF8; 
+            clip-path: path('M 0,240 L 360,240 L 230,104 Q 218.3,96 212.5,96 L 147.5,96 Q 141.7,96 130,104 Z');
         }
 
         .top-flap-container {
@@ -129,15 +167,40 @@
             height: 170px;
             z-index: 5;
             transform-origin: top;
-            filter: drop-shadow(0 4px 10px rgba(180, 160, 140, 0.35));
+            transform-style: preserve-3d;
             transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), z-index 0s 0.3s;
         }
 
-        .flap-shape {
+        .flap-inside {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #E8DACB; 
+            clip-path: path('M 0,0 L 360,0 L 190,140 Q 180,150 170,140 Z');
+            transform: rotateY(180deg) translateZ(1px);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        .flap-outside {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: translateZ(1px);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            filter: drop-shadow(0 4px 10px rgba(180, 160, 140, 0.35));
+        }
+
+        .outside-shape {
             width: 100%;
             height: 100%;
             background: #FCFAF8;
-            clip-path: path('M 0,0 L 360,0 L 220,105 Q 180,145 140,105 Z');
+            clip-path: path('M 0,0 L 360,0 L 190,140 Q 180,150 170,140 Z');
         }
 
         .wax-seal {
@@ -147,7 +210,8 @@
             background-color: #8B2632;
             border-radius: 50%;
             left: 157px;
-            top: 100px;
+            top: 115px; 
+            transform: translateZ(2px); 
             box-shadow: inset 0 0 8px rgba(0,0,0,0.4), 0 2px 5px rgba(0,0,0,0.2);
             display: flex;
             justify-content: center;
@@ -254,10 +318,10 @@
         }
 
         @keyframes pullAndCenter {
-            0% { transform: translateY(0); clip-path: inset(0 0 210px 0); z-index: 3; }
-            49% { transform: translateY(-460px); clip-path: inset(0 0 0 0); z-index: 3; }
-            50% { transform: translateY(-460px); clip-path: inset(0 0 0 0); z-index: 6; }
-            100% { transform: translateY(-310px); clip-path: inset(0 0 0 0); z-index: 6; }
+            0% { transform: translateY(0); clip-path: inset(0 0 212px 0); z-index: 3; }
+            49% { transform: translateY(-462px); clip-path: inset(0 0 0 0); z-index: 3; }
+            50% { transform: translateY(-462px); clip-path: inset(0 0 0 0); z-index: 6; }
+            100% { transform: translateY(-302px); clip-path: inset(0 0 0 0); z-index: 6; }
         }
 
         @keyframes musicBounce {
@@ -293,12 +357,24 @@
                 <div class="card-inner" id="cardInner">
                     <img class="card-face card-front" id="imgFront" src="info0.jpg" alt="Info 0">
                     <img class="card-face card-back" id="imgBack" src="info1.jpg" alt="Info 1">
+                    
+                    <div class="card-layer" style="transform: translateZ(1.2px);"></div>
+                    <div class="card-layer" style="transform: translateZ(0.8px);"></div>
+                    <div class="card-layer" style="transform: translateZ(0.4px);"></div>
+                    <div class="card-layer" style="transform: translateZ(0px);"></div>
+                    <div class="card-layer" style="transform: translateZ(-0.4px);"></div>
+                    <div class="card-layer" style="transform: translateZ(-0.8px);"></div>
+                    <div class="card-layer" style="transform: translateZ(-1.2px);"></div>
                 </div>
                 <div class="hint-swipe" id="hintSwipe">👆</div>
             </div>
 
             <div class="front-pocket">
-                <div class="front-shape"></div>
+                <div class="flap-left"></div>
+                <div class="flap-right"></div>
+                <div class="flap-bottom-wrapper">
+                    <div class="flap-bottom"></div>
+                </div>
             </div>
 
             <div class="music-player paused" id="musicPlayer">
@@ -307,7 +383,10 @@
             </div>
 
             <div class="top-flap-container">
-                <div class="flap-shape"></div>
+                <div class="flap-inside"></div>
+                <div class="flap-outside">
+                    <div class="outside-shape"></div>
+                </div>
                 <div class="wax-seal">❤</div>
             </div>
             
@@ -339,7 +418,6 @@
         let startX = 0;             
         let currentScale = 1; 
         
-        // 🌟 更新：用 Set 集合來記錄「已經從哪些頁面滑動過」
         let swipedFromIndices = new Set();
         let swipeHintTimer;
 
@@ -362,18 +440,15 @@
             return index;
         }
 
-        // 🌟 新增：統一控管滑動提示的函數
         function triggerSwipeHint() {
             clearTimeout(swipeHintTimer);
             hintSwipe.classList.remove('active');
             
-            // 如果 4 頁都滑過了，就永遠不再顯示提示
             if (swipedFromIndices.size >= images.length) return;
 
             let currentTurn = Math.round(currentTotalRotation / 180);
             let currentIndex = getIndexForTurn(currentTurn);
 
-            // 如果停留在「還沒有滑過」的頁面，倒數 3 秒後顯示提示
             if (!swipedFromIndices.has(currentIndex)) {
                 swipeHintTimer = setTimeout(() => {
                     hintSwipe.classList.add('active');
@@ -401,7 +476,6 @@
                     myLetter.classList.add('no-clip'); 
                     myLetter.style.cursor = 'grab';    
                     
-                    // 🌟 啟動第一頁的提示倒數
                     triggerSwipeHint();
 
                 }, 2400);
@@ -431,7 +505,6 @@
             if (!isExtracted || isAnimating) return;
             if (e.touches && e.touches.length > 1) return;
             
-            // 🌟 紀錄使用者剛從哪一頁開始滑動，並立刻隱藏目前的提示
             let currentTurn = Math.round(currentTotalRotation / 180);
             swipedFromIndices.add(getIndexForTurn(currentTurn));
             
@@ -491,7 +564,6 @@
                 imgFront.src = images[getIndexForTurn(evenTurn)];
                 imgBack.src = images[getIndexForTurn(oddTurn)];
                 
-                // 🌟 動畫翻頁結束後，檢查新的一頁是否需要顯示提示
                 triggerSwipeHint();
             }, 500);
         }
